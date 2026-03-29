@@ -17,8 +17,6 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [selectedTown, setSelectedTown] = useState('')
-  const [deliveryFee, setDeliveryFee] = useState(null)
-  const [supplierCities, setSupplierCities] = useState([])
   const [form, setForm] = useState({
     full_name: '',
     phone: '',
@@ -32,38 +30,9 @@ export default function CheckoutPage() {
     setCart(stored)
   }, [])
 
-  useEffect(() => {
-    async function fetchSupplierCities() {
-      if (cart.length === 0) return
-      const supabase = createClient()
-      const supplierIds = [...new Set(cart.map(item => item.supplier_id).filter(Boolean))]
-      if (supplierIds.length === 0) return
-      const { data } = await supabase
-        .from('suppliers')
-        .select('id, city')
-        .in('id', supplierIds)
-      if (data) setSupplierCities(data)
-    }
-    fetchSupplierCities()
-  }, [cart])
-
-  useEffect(() => {
-    if (!selectedTown) {
-      setDeliveryFee(null)
-      return
-    }
-    const allSuppliersInTown = supplierCities.length > 0 &&
-      supplierCities.every(s => s.city?.toLowerCase() === selectedTown.toLowerCase())
-
-    if (allSuppliersInTown) {
-      setDeliveryFee(0)
-    } else {
-      setDeliveryFee(DELIVERY_RATES[selectedTown] ?? 0)
-    }
-  }, [selectedTown, supplierCities])
-
+  const deliveryFee = selectedTown ? DELIVERY_RATES[selectedTown] ?? 0 : 0
   const subtotal = cart.reduce((acc, item) => acc + item.retail_price * item.quantity, 0)
-  const total = subtotal + (deliveryFee ?? 0)
+  const total = subtotal + deliveryFee
 
   async function handleCheckout() {
     if (!form.full_name || !form.phone || !form.address) {
@@ -162,7 +131,6 @@ export default function CheckoutPage() {
         CHECKOUT
       </h1>
 
-      {/* Order Summary */}
       <div style={{ border: '1px solid #222', borderRadius: '12px', padding: '20px', marginBottom: '32px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px', color: '#888' }}>
           ORDER SUMMARY
@@ -192,17 +160,16 @@ export default function CheckoutPage() {
 
         {selectedTown && deliveryFee === 0 && (
           <p style={{ fontSize: '12px', color: '#4ade80', marginTop: '8px' }}>
-            ✓ Free delivery — supplier is in {selectedTown}
+            ✓ Free delivery — supplier is in Nairobi
           </p>
         )}
-        {selectedTown && deliveryFee !== null && deliveryFee > 0 && (
+        {selectedTown && deliveryFee > 0 && (
           <p style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
-            * Delivery charges apply for orders outside the supplier's town
+            * Delivery charges apply for orders outside Nairobi
           </p>
         )}
       </div>
 
-      {/* Form Fields */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '8px', color: '#888', fontSize: '13px' }}>FULL NAME</label>
